@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L V Spices — Customer Complaint Register</title>
+  <meta name="description" content="L V Spices Customer Complaint Register — FSSAI Food Safety Complaint Tracking System." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="icon" type="image/jpeg" href="assets/lv_spices_logo.jpg" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- EDIT COMPLAINT MODAL -->
+<div class="modal-overlay" id="edit-modal-overlay" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Edit Complaint <span id="edit-modal-id" style="font-weight:400;font-size:14px;color:var(--text-muted)"></span></h3>
+      <button class="modal-close" onclick="closeEditModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Status</label>
+          <select id="e-status">
+            <option value="Open">Open</option>
+            <option value="Pending">Pending</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Closing Date</label>
+          <input type="date" id="e-closing" />
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <label>Action Taken (CAPA)</label>
+        <textarea id="e-action" rows="2" placeholder="Describe corrective action taken..."></textarea>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <label>Remarks</label>
+        <input type="text" id="e-remarks" placeholder="e.g. Customer satisfied, No further complaint." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-primary" id="save-edit-btn" onclick="saveEditComplaint()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW COMPLAINT MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>New Complaint Entry</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Date *</label>
+          <input type="date" id="n-date" />
+        </div>
+        <div class="form-row">
+          <label>Status</label>
+          <select id="n-status">
+            <option>Closed</option>
+            <option>Open</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Customer Name *</label>
+          <input type="text" id="n-customer" placeholder="e.g. Ramesh Kumar" />
+        </div>
+        <div class="form-row">
+          <label>Contact No.</label>
+          <input type="text" id="n-contact" placeholder="9876543210" />
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label>Product Name *</label>
+          <input type="text" id="n-product" placeholder="e.g. Chaat Masala" />
+        </div>
+        <div class="form-row">
+          <label>Batch No.</label>
+          <input type="text" id="n-batch" placeholder="e.g. Batch No. CM0926" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Complaint Details *</label>
+        <textarea id="n-complaint" rows="2" placeholder="Describe the complaint..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>Action Taken (CAPA)</label>
+        <textarea id="n-action" rows="2" placeholder="Action taken to resolve..."></textarea>
+      </div>
+      <div class="form-row">
+        <label>Remarks</label>
+        <input type="text" id="n-remarks" placeholder="e.g. Customer satisfied." />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" id="save-complaint-btn" onclick="saveNewComplaint()">Save Complaint</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-container">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo-wrap">
+        <img src="assets/lv_spices_logo.jpg" alt="L V Spices Logo" class="brand-logo-img" />
+      </div>
+      <div class="brand-text">
+        <h1>L V SPICES</h1>
+        <span>COMPLAINT REGISTER</span>
+      </div>
+      <button class="sidebar-close-btn" onclick="closeSidebar()">✕</button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <a class="nav-item active" href="javascript:void(0)" onclick="switchSidebarView('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+      <a class="nav-item" href="javascript:void(0)" onclick="switchSidebarView('complaints')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span>Complaints</span>
+      </a>
+    </nav>
+
+    <!-- Optional Sidebar complaint quick cards list -->
+    <div class="sidebar-complaint-feed" id="complaint-list" style="display: none;"></div>
+
+    <!-- Decorative Spice Photography Composition at Bottom-Left -->
+    <div class="sidebar-spice-wrap">
+      <img src="assets/sidebar-spices.png" alt="Decorative Spices" class="sidebar-spice-img" />
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+    <!-- TOP HEADER -->
+    <header class="topbar">
+      <div class="header-title-wrap">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <div>
+          <h1 class="page-title">Customer <span class="title-highlight">Complaint Register</span></h1>
+          <div class="page-subtitle">
+            <span>FSSAI Food Safety Complaint Tracking</span>
+            <span class="leaf-icon">🍃</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="text"
+            id="complaint-search-input"
+            placeholder="Search complaints by ID, customer or product..."
+            oninput="onSearchChange(this.value)"
+          />
+        </div>
+        <button class="btn-new-complaint" onclick="openNewModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>New Complaint</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- STATS CARDS BAR -->
+    <section class="stats-bar">
+      <!-- Card 1: Total Complaints -->
+      <div class="stats-card card-pink">
+        <div class="stat-icon-square icon-pink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number" id="stat-total">5</div>
+          <div class="stat-label">Total Complaints</div>
+        </div>
+        <!-- Decorative subtle wave SVG -->
+        <svg class="stat-wave wave-pink" viewBox="0 0 120 40" preserveAspectRatio="none">
+          <path d="M0,25 C30,35 60,10 90,20 C105,25 115,15 120,10 L120,40 L0,40 Z"></path>
+        </svg>
+      </div>
+
+      <!-- Card 2: Closed -->
+      <div class="stats-card card-mint">
+        <div class="stat-icon-square icon-mint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="22" height="22">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number" id="stat-closed">5</div>
+          <div class="stat-label">Closed</div>
+        </div>
+        <!-- Decorative subtle wave SVG -->
+        <svg class="stat-wave wave-mint" viewBox="0 0 120 40" preserveAspectRatio="none">
+          <path d="M0,25 C30,35 60,10 90,20 C105,25 115,15 120,10 L120,40 L0,40 Z"></path>
+        </svg>
+      </div>
+
+      <!-- Card 3: Open Complaints -->
+      <div class="stats-card card-blue">
+        <div class="stat-icon-square icon-blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number" id="stat-open">0</div>
+          <div class="stat-label">Open Complaints</div>
+        </div>
+        <svg class="stat-wave wave-blue" viewBox="0 0 120 40" preserveAspectRatio="none">
+          <path d="M0,25 C30,35 60,10 90,20 C105,25 115,15 120,10 L120,40 L0,40 Z"></path>
+        </svg>
+      </div>
+
+      <!-- Card 4: Pending Resolution -->
+      <div class="stats-card card-orange">
+        <div class="stat-icon-square icon-orange">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-number" id="stat-pending">0</div>
+          <div class="stat-label">Pending Resolution</div>
+        </div>
+        <svg class="stat-wave wave-orange" viewBox="0 0 120 40" preserveAspectRatio="none">
+          <path d="M0,25 C30,35 60,10 90,20 C105,25 115,15 120,10 L120,40 L0,40 Z"></path>
+        </svg>
+      </div>
+    </section>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content">
+      <!-- FULL COMPLAINT REGISTER TABLE CARD -->
+      <div class="table-card">
+        <div class="table-card-header">
+          <div class="table-card-title">
+            <span class="title-icon-red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </span>
+            <h2>Full Complaint Register • FSSAI Audit Log</h2>
+          </div>
+          <button class="btn-download-excel" onclick="exportExcel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="8" y1="13" x2="16" y2="13"></line>
+              <line x1="8" y1="17" x2="16" y2="17"></line>
+              <line x1="10" y1="9" x2="8" y2="9"></line>
+            </svg>
+            <span>Download Excel</span>
+          </button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 48px; text-align: center;">SR.</th>
+                <th>DATE</th>
+                <th>TICKET ID</th>
+                <th>CUSTOMER</th>
+                <th>PRODUCT &amp; BATCH</th>
+                <th>COMPLAINT DETAILS</th>
+                <th>ACTION TAKEN (CAPA)</th>
+                <th>CLOSING DATE</th>
+                <th>STATUS</th>
+                <th>REMARKS</th>
+                <th>EDIT</th>
+              </tr>
+            </thead>
+            <tbody id="complaint-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
