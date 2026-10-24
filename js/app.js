@@ -431,7 +431,105 @@ window.exportExcel = function() {
   XLSX.writeFile(wb, `LV_Spices_Complaints_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-window.printPage = function() { window.print(); }
+window.printRegister = window.printPage = function() {
+  const data = (filteredComplaints && filteredComplaints.length) ? filteredComplaints : allComplaints;
+  if (!data || !data.length) {
+    alert('No complaint records to print.');
+    return;
+  }
+  const rowH = Math.max(8, Math.floor(148 / data.length));
+  function esc(v) {
+    return v ? String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '—';
+  }
+  function statusBadge(s) {
+    const st = (s || '').toUpperCase();
+    if (st === 'CLOSED') {
+      return `<span style="background:#dcfce7;color:#15803d;border:1px solid #86efac;padding:1.5pt 4.5pt;border-radius:3pt;font-size:6.5pt;font-weight:700;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact">CLOSED</span>`;
+    } else if (st === 'PENDING') {
+      return `<span style="background:#fef3c7;color:#b45309;border:1px solid #fcd34d;padding:1.5pt 4.5pt;border-radius:3pt;font-size:6.5pt;font-weight:700;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact">PENDING</span>`;
+    } else {
+      return `<span style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:1.5pt 4.5pt;border-radius:3pt;font-size:6.5pt;font-weight:700;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact">OPEN</span>`;
+    }
+  }
+
+  const rowsHtml = data.map((c, i) => `<tr style="height:${rowH}mm;${i % 2 === 1 ? 'background:#f8fafc' : ''}">
+    <td style="text-align:center;font-weight:700;color:#64748b">${c.srNo || i + 1}</td>
+    <td style="white-space:nowrap">${esc(c.displayDate || c.date)}</td>
+    <td style="font-weight:700;color:#dc2626;white-space:nowrap">${esc(c.id)}</td>
+    <td><b>${esc(c.customerName)}</b><br><span style="font-size:6.5pt;color:#64748b">${esc(c.contactNo)}</span></td>
+    <td><b>${esc(c.productName)}</b><br><span style="font-size:6.5pt;color:#64748b">${esc(c.batchNo)}</span></td>
+    <td style="color:#b91c1c;font-weight:600">${esc(c.complaint)}</td>
+    <td style="color:#047857">${esc(c.actionTaken)}</td>
+    <td style="white-space:nowrap">${esc(c.closingDate)}</td>
+    <td style="text-align:center">${statusBadge(c.status)}</td>
+    <td style="color:#475569">${esc(c.remarks)}</td>
+  </tr>`).join('');
+
+  const total = data.length;
+  const closed = data.filter(c => (c.status || '').toLowerCase() === 'closed').length;
+  const open = data.filter(c => (c.status || '').toLowerCase() === 'open').length;
+  const pending = data.filter(c => (c.status || '').toLowerCase() === 'pending').length;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>LV Spices — Customer Complaint Register</title>
+<style>
+  @page{size:A4 landscape;margin:8mm}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{font-family:Arial,sans-serif;font-size:8pt;color:#000;background:#fff}
+  .hdr{border:2pt solid #000;padding:6pt 8pt;margin-bottom:6pt}
+  .hdr h1{font-size:13pt;font-weight:800;text-transform:uppercase;letter-spacing:0.5px}
+  .hdr p{font-size:7pt;color:#444;margin-top:2pt}
+  .pills{display:flex;gap:6pt;margin-top:5pt;flex-wrap:wrap}
+  .pill{border:1pt solid #555;padding:1.5pt 6pt;font-size:7pt;border-radius:3pt}
+  .pill b{color:#b91c1c}
+  table{width:100%;border-collapse:collapse;margin-top:5pt}
+  thead{display:table-header-group}
+  tr{page-break-inside:avoid}
+  th{background:#1a1a1a;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:7pt;padding:5pt 4pt;border:0.75pt solid #000;text-align:left}
+  td{font-size:7.5pt;padding:4pt;border:0.5pt solid #bbb;vertical-align:middle;line-height:1.25}
+  .sig{margin-top:14pt;font-size:8pt;display:flex;justify-content:space-between;padding:0 4pt}
+</style></head><body>
+<div class="hdr">
+  <h1>Customer Complaint Register — L V Spices</h1>
+  <p>FSSAI Food Safety Complaint Tracking • Corrective &amp; Preventive Action (CAPA) Audit Log</p>
+  <div class="pills">
+    <span class="pill">🗓️ Printed: <b>${new Date().toLocaleDateString('en-IN')}</b></span>
+    <span class="pill">📋 Total Complaints: <b>${total}</b></span>
+    <span class="pill">✅ Closed: <b style="color:#15803d">${closed}</b></span>
+    <span class="pill">⏳ Open / Pending: <b>${open + pending}</b></span>
+  </div>
+</div>
+<table>
+  <thead><tr>
+    <th style="width:3.5%;text-align:center">SR.</th>
+    <th style="width:7.5%">DATE</th>
+    <th style="width:7.5%">TICKET ID</th>
+    <th style="width:13%">CUSTOMER</th>
+    <th style="width:14%">PRODUCT &amp; BATCH</th>
+    <th style="width:17%">COMPLAINT DETAILS</th>
+    <th style="width:17%">ACTION TAKEN (CAPA)</th>
+    <th style="width:7.5%">CLOSING</th>
+    <th style="width:6%;text-align:center">STATUS</th>
+    <th style="width:7%">REMARKS</th>
+  </tr></thead>
+  <tbody>${rowsHtml}</tbody>
+</table>
+<div class="sig">
+  <span><b>Quality In-Charge:</b> &nbsp; ____________________</span>
+  <span><b>Food Safety Supervisor:</b> &nbsp; ____________________</span>
+  <span><b>Date:</b> ${new Date().toLocaleDateString('en-IN')}</span>
+</div>
+<script>window.onload=function(){window.print();setTimeout(function(){window.close();},800);};<\/script>
+</body></html>`;
+
+  const pw = window.open('', '_blank', 'width=1200,height=850');
+  if (pw) {
+    pw.document.write(html);
+    pw.document.close();
+  } else {
+    alert('Please allow popups to print the A4 register.');
+  }
+};
 window.toggleSidebar = function() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
 window.closeSidebar = function() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 
