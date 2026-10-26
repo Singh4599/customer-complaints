@@ -493,7 +493,6 @@ window.printRegister = window.printPage = function() {
   <h1>Customer Complaint Register — L V Spices</h1>
   <p>FSSAI Food Safety Complaint Tracking • Corrective &amp; Preventive Action (CAPA) Audit Log</p>
   <div class="pills">
-    <span class="pill">🗓️ Printed: <b>${new Date().toLocaleDateString('en-IN')}</b></span>
     <span class="pill">📋 Total Complaints: <b>${total}</b></span>
     <span class="pill">✅ Closed: <b style="color:#15803d">${closed}</b></span>
     <span class="pill">⏳ Open / Pending: <b>${open + pending}</b></span>
@@ -517,7 +516,7 @@ window.printRegister = window.printPage = function() {
 <div class="sig">
   <span><b>Quality In-Charge:</b> &nbsp; ____________________</span>
   <span><b>Food Safety Supervisor:</b> &nbsp; ____________________</span>
-  <span><b>Date:</b> ${new Date().toLocaleDateString('en-IN')}</span>
+  <span><b>Date:</b> ____________________</span>
 </div>
 <script>window.onload=function(){window.print();setTimeout(function(){window.close();},800);};<\/script>
 </body></html>`;
